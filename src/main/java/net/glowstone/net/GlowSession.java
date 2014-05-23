@@ -21,7 +21,6 @@ import net.glowstone.net.protocol.GlowProtocol;
 import net.glowstone.net.protocol.HandshakeProtocol;
 import net.glowstone.net.protocol.LoginProtocol;
 import net.glowstone.net.protocol.PlayProtocol;
-import org.bukkit.entity.Player;
 import org.bukkit.event.player.PlayerKickEvent;
 import org.bukkit.event.player.PlayerLoginEvent;
 
@@ -241,8 +240,8 @@ public final class GlowSession extends BasicSession {
 
         // todo: in the future, make actual ping measurements?
         Message userListMessage = new UserListItemMessage(player.getPlayerListName(), true, 0);
-        for (Player sendPlayer : server.getOnlinePlayers()) {
-            ((GlowPlayer) sendPlayer).getSession().send(userListMessage);
+        for (GlowPlayer sendPlayer : server.getPlayerIterable()) {
+            sendPlayer.getSession().send(userListMessage);
             if (sendPlayer != player) {
                 send(new UserListItemMessage(sendPlayer.getPlayerListName(), true, 0));
             }
@@ -320,8 +319,8 @@ public final class GlowSession extends BasicSession {
         if (player != null) {
             player.remove();
             Message userListMessage = new UserListItemMessage(player.getPlayerListName(), false, 0);
-            for (Player player : server.getOnlinePlayers()) {
-                ((GlowPlayer) player).getSession().send(userListMessage);
+            for (GlowPlayer player : server.getPlayerIterable()) {
+                player.getSession().send(userListMessage);
             }
 
             GlowServer.logger.info(player.getName() + " [" + address + "] lost connection");

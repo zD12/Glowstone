@@ -19,7 +19,7 @@ public final class StatusRequestHandler implements MessageHandler<GlowSession, S
     public void handle(GlowSession session, StatusRequestMessage message) {
         // create and call the event
         GlowServer server = session.getServer();
-        int online = server.getOnlinePlayers().length;
+        int online = server.getOnlinePlayerCount();
         InetAddress address = session.getAddress().getAddress();
 
         StatusEvent event = new StatusEvent(address, server.getMotd(), online, server.getMaxPlayers());

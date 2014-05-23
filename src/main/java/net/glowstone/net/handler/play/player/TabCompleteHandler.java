@@ -2,6 +2,7 @@ package net.glowstone.net.handler.play.player;
 
 import com.flowpowered.networking.MessageHandler;
 import net.glowstone.EventFactory;
+import net.glowstone.entity.GlowPlayer;
 import net.glowstone.net.GlowSession;
 import net.glowstone.net.message.play.player.TabCompleteMessage;
 import net.glowstone.net.message.play.player.TabCompleteResponseMessage;
@@ -31,7 +32,7 @@ public final class TabCompleteHandler implements MessageHandler<GlowSession, Tab
             }
 
             // from Command
-            for (Player player : session.getServer().getOnlinePlayers()) {
+            for (GlowPlayer player : session.getServer().getPlayerIterable()) {
                 String name = player.getName();
                 if (sender.canSee(player) && StringUtil.startsWithIgnoreCase(name, lastWord)) {
                     completions.add(name);

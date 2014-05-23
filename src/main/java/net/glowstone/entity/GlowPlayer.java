@@ -576,7 +576,7 @@ public final class GlowPlayer extends GlowHumanEntity implements Player {
         if (name.length() > 16) {
             throw new IllegalArgumentException("The given name was " + name.length() + " chars long, longer than the maximum of 16");
         }
-        for (Player player : server.getOnlinePlayers()) {
+        for (Player player : server.getPlayerIterable()) {
             if (player != this && player.getPlayerListName().equals(name)) {
                 throw new IllegalArgumentException("The name given, " + name + ", is already used by " + player.getName() + ".");
             }
@@ -585,9 +585,9 @@ public final class GlowPlayer extends GlowHumanEntity implements Player {
         Message removeMessage = new UserListItemMessage(getPlayerListName(), false, 0);
         playerListName = name;
         Message reAddMessage = new UserListItemMessage(getPlayerListName(), true, 0);
-        for (Player player : server.getOnlinePlayers()) {
-            ((GlowPlayer) player).getSession().send(removeMessage);
-            ((GlowPlayer) player).getSession().send(reAddMessage);
+        for (GlowPlayer player : server.getPlayerIterable()) {
+            player.getSession().send(removeMessage);
+            player.getSession().send(reAddMessage);
         }
     }
 

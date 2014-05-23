@@ -1,8 +1,10 @@
 package net.glowstone;
 
+import com.google.common.collect.Iterables;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import net.glowstone.command.ColorCommand;
+import net.glowstone.entity.GlowPlayer;
 import net.glowstone.inventory.CraftingManager;
 import net.glowstone.inventory.GlowInventory;
 import net.glowstone.inventory.GlowItemFactory;
@@ -358,7 +360,7 @@ public final class GlowServer implements Server {
         pluginManager.clearPlugins();
 
         // Kick all players (this saves their data too)
-        for (Player player : getOnlinePlayers()) {
+        for (Player player : getPlayerIterable()) {
             player.kickPlayer("Server shutting down.");
         }
 
@@ -687,6 +689,45 @@ public final class GlowServer implements Server {
     }
 
     ////////////////////////////////////////////////////////////////////////////
+    // Efficient player iterable
+
+    public int getOnlinePlayerCount() {
+        return Iterables.size(getPlayerIterable());
+    }
+
+    public Iterable<GlowPlayer> getPlayerIterable() {
+        return Iterables.concat(new RootPlayerIterator(worlds.getWorlds()));
+    }
+
+    private static class RootPlayerIterator implements Iterator<Iterable<GlowPlayer>>, Iterable<Iterable<GlowPlayer>> {
+        private Iterator<GlowWorld> worldIter;
+
+        private RootPlayerIterator(Iterable<GlowWorld> worlds) {
+            worldIter = worlds.iterator();
+        }
+
+        @Override
+        public Iterator<Iterable<GlowPlayer>> iterator() {
+            return this;
+        }
+
+        @Override
+        public boolean hasNext() {
+            return worldIter.hasNext();
+        }
+
+        @Override
+        public Iterable<GlowPlayer> next() {
+            return worldIter.next().getRawPlayers();
+        }
+
+        @Override
+        public void remove() {
+            throw new UnsupportedOperationException();
+        }
+    }
+
+    ////////////////////////////////////////////////////////////////////////////
     // Player management
 
     public Set<OfflinePlayer> getOperators() {
@@ -698,12 +739,7 @@ public final class GlowServer implements Server {
     }
 
     public Player[] getOnlinePlayers() {
-        ArrayList<Player> result = new ArrayList<>();
-        for (World world : getWorlds()) {
-            for (Player player : world.getPlayers())
-                result.add(player);
-        }
-        return result.toArray(new Player[result.size()]);
+        return Iterables.toArray(getPlayerIterable(), Player.class);
     }
 
     public OfflinePlayer[] getOfflinePlayers() {
@@ -714,7 +750,7 @@ public final class GlowServer implements Server {
         name = name.toLowerCase();
         Player bestPlayer = null;
         int bestDelta = -1;
-        for (Player player : getOnlinePlayers()) {
+        for (Player player : getPlayerIterable()) {
             if (player.getName().toLowerCase().startsWith(name)) {
                 int delta = player.getName().length() - name.length();
                 if (bestPlayer == null || delta < bestDelta) {
@@ -726,7 +762,7 @@ public final class GlowServer implements Server {
     }
 
     public Player getPlayer(UUID uuid) {
-        for (Player player : getOnlinePlayers()) {
+        for (Player player : getPlayerIterable()) {
             if (player.getUniqueId().equals(uuid))
                 return player;
         }
@@ -734,7 +770,7 @@ public final class GlowServer implements Server {
     }
 
     public Player getPlayerExact(String name) {
-        for (Player player : getOnlinePlayers()) {
+        for (Player player : getPlayerIterable()) {
             if (player.getName().equalsIgnoreCase(name))
                 return player;
         }
@@ -745,7 +781,7 @@ public final class GlowServer implements Server {
         name = name.toLowerCase();
 
         ArrayList<Player> result = new ArrayList<>();
-        for (Player player : getOnlinePlayers()) {
+        for (Player player : getPlayerIterable()) {
             String lower = player.getName().toLowerCase();
             if (lower.equals(name)) {
                 result.clear();
@@ -789,7 +825,7 @@ public final class GlowServer implements Server {
     }
 
     public void savePlayers() {
-        for (Player player : getOnlinePlayers())
+        for (Player player : getPlayerIterable())
             player.saveData();
     }
 
@@ -997,7 +1033,7 @@ public final class GlowServer implements Server {
     @Override
     public void sendPluginMessage(Plugin source, String channel, byte[] message) {
         StandardMessenger.validatePluginMessage(getMessenger(), source, channel, message);
-        for (Player player : getOnlinePlayers()) {
+        for (Player player : getPlayerIterable()) {
             player.sendPluginMessage(source, channel, message);
         }
     }
@@ -1005,7 +1041,7 @@ public final class GlowServer implements Server {
     @Override
     public Set<String> getListeningPluginChannels() {
         HashSet<String> result = new HashSet<>();
-        for (Player player : getOnlinePlayers()) {
+        for (Player player : getPlayerIterable()) {
             result.addAll(player.getListeningPluginChannels());
         }
         return result;
