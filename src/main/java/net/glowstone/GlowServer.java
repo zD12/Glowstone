@@ -172,7 +172,7 @@ public final class GlowServer implements Server {
     /**
      * The scoreboard manager for the server.
      */
-    private final ScoreboardManager scoreboardManager = new GlowScoreboardManager(this);
+    private final GlowScoreboardManager scoreboardManager = new GlowScoreboardManager(this);
 
     /**
      * The crafting manager for this server.
@@ -644,7 +644,7 @@ public final class GlowServer implements Server {
         return GlowItemFactory.instance();
     }
 
-    public ScoreboardManager getScoreboardManager() {
+    public GlowScoreboardManager getScoreboardManager() {
         return scoreboardManager;
     }
 
