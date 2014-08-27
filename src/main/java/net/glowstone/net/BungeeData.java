@@ -15,7 +15,7 @@ import java.util.UUID;
 /**
  * Container for proxy (e.g. BungeeCord) player data spoofing.
  */
-public class BungeeData {
+public final class BungeeData {
 
     private final String hostname;
     private final InetSocketAddress address;
@@ -29,7 +29,7 @@ public class BungeeData {
      * @throws Exception if an error occurs parsing the source text.
      */
     public BungeeData(GlowSession session, String sourceText) throws Exception {
-        String[] parts = sourceText.split("\00");
+        String[] parts = sourceText.split("\0");
         if (parts.length != 3 && parts.length != 4) {
             throw new IllegalArgumentException("parts length was " + parts.length + ", should be 3 or 4");
         }

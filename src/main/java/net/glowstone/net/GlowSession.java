@@ -82,6 +82,11 @@ public final class GlowSession extends BasicSession {
     private String verifyUsername;
 
     /**
+     * The hostname used to connect.
+     */
+    private String hostname;
+
+    /**
      * A timeout counter. This is increment once every tick and if it goes above
      * a certain value the session is disconnected.
      */
@@ -182,12 +187,21 @@ public final class GlowSession extends BasicSession {
     }
 
     /**
+     * Set the hostname the player used to connect to the server.
+     * @param hostname Hostname in "addr:port" format.
+     */
+    public void setHostname(String hostname) {
+        this.hostname = hostname;
+    }
+
+    /**
      * Set the BungeeData for this session.
      * @param bungeeData The proxy data to use.
      */
     public void setBungeeData(BungeeData bungeeData) {
         bungee = bungeeData;
         address = bungeeData.getAddress();
+        hostname = bungeeData.getHostname();
     }
 
     /**
@@ -265,7 +279,7 @@ public final class GlowSession extends BasicSession {
         }
 
         // login event
-        PlayerLoginEvent event = EventFactory.onPlayerLogin(player);
+        PlayerLoginEvent event = EventFactory.onPlayerLogin(player, hostname);
         if (event.getResult() != PlayerLoginEvent.Result.ALLOWED) {
             disconnect(event.getKickMessage(), true);
             return;

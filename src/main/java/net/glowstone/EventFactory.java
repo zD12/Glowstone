@@ -4,7 +4,6 @@ import net.glowstone.block.GlowBlock;
 import net.glowstone.block.ItemTable;
 import net.glowstone.block.blocktype.BlockType;
 import net.glowstone.entity.GlowPlayer;
-import net.glowstone.net.GlowSession;
 import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
@@ -19,7 +18,10 @@ import org.bukkit.event.server.ServerCommandEvent;
 import org.bukkit.event.world.*;
 import org.bukkit.inventory.ItemStack;
 
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.util.Collection;
+import java.util.UUID;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.FutureTask;
@@ -109,18 +111,40 @@ public final class EventFactory {
         return callEvent(new PlayerTeleportEvent(player, from, to, cause));
     }
 
-    public static PlayerLoginEvent onPlayerLogin(GlowPlayer player) {
+    public static AsyncPlayerPreLoginEvent onPlayerPreLogin(String name, InetSocketAddress address, UUID uuid) {
+        // call async event
+        final AsyncPlayerPreLoginEvent asyncEvent = new AsyncPlayerPreLoginEvent(name, address.getAddress(), uuid);
+        callEvent(asyncEvent);
+
+        // call sync event only if needed
+        if (PlayerPreLoginEvent.getHandlerList().getRegisteredListeners().length > 0) {
+            // initialize event to match current state from async event
+            final PlayerPreLoginEvent event = new PlayerPreLoginEvent(name, address.getAddress(), uuid);
+            if (asyncEvent.getResult() != PlayerPreLoginEvent.Result.ALLOWED) {
+                event.disallow(asyncEvent.getResult(), asyncEvent.getKickMessage());
+            }
+
+            // call event synchronously and copy data back to original event
+            callEvent(event);
+            asyncEvent.disallow(event.getResult(), event.getKickMessage());
+        }
+
+        return asyncEvent;
+    }
+
+    public static PlayerLoginEvent onPlayerLogin(GlowPlayer player, String hostname) {
         final GlowServer server = player.getServer();
-        final String address = player.getAddress().getAddress().getHostAddress();
-        final PlayerLoginEvent event = new PlayerLoginEvent(player);
+        final InetAddress address = player.getAddress().getAddress();
+        final String addressString = address.getHostAddress();
+        final PlayerLoginEvent event = new PlayerLoginEvent(player, hostname, address);
 
         final BanList nameBans = server.getBanList(BanList.Type.NAME);
         final BanList ipBans = server.getBanList(BanList.Type.IP);
 
         if (nameBans.isBanned(player.getName())) {
             event.disallow(PlayerLoginEvent.Result.KICK_BANNED, "Banned: " + nameBans.getBanEntry(player.getName()).getReason());
-        } else if (ipBans.isBanned(address)) {
-            event.disallow(PlayerLoginEvent.Result.KICK_BANNED, "Banned: " + ipBans.getBanEntry(address).getReason());
+        } else if (ipBans.isBanned(addressString)) {
+            event.disallow(PlayerLoginEvent.Result.KICK_BANNED, "Banned: " + ipBans.getBanEntry(addressString).getReason());
         } else if (server.hasWhitelist() && !player.isWhitelisted()) {
             event.disallow(PlayerLoginEvent.Result.KICK_WHITELIST, "You are not whitelisted on this server.");
         } else if (server.getOnlinePlayers().length >= server.getMaxPlayers()) {
@@ -129,10 +153,6 @@ public final class EventFactory {
         }
 
         return callEvent(event);
-    }
-
-    public static PlayerPreLoginEvent onPlayerPreLogin(String name, GlowSession session) {
-        return callEvent(new PlayerPreLoginEvent(name, session.getAddress().getAddress()));
     }
 
     public static PlayerAnimationEvent onPlayerAnimate(GlowPlayer player) {

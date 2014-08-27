@@ -1,12 +1,14 @@
 package net.glowstone.net.handler.login;
 
 import com.flowpowered.networking.MessageHandler;
+import net.glowstone.EventFactory;
 import net.glowstone.GlowServer;
 import net.glowstone.entity.meta.PlayerProfile;
 import net.glowstone.entity.meta.PlayerProperty;
 import net.glowstone.net.GlowSession;
 import net.glowstone.net.message.login.EncryptionKeyResponseMessage;
 import net.glowstone.util.UuidUtils;
+import org.bukkit.event.player.AsyncPlayerPreLoginEvent;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -149,6 +151,13 @@ public final class EncryptionKeyResponseHandler implements MessageHandler<GlowSe
                     String value = (String) propJson.get("value");
                     String signature = (String) propJson.get("signature");
                     properties.add(new PlayerProperty(propName, value, signature));
+                }
+
+                // Fire pre-login event
+                AsyncPlayerPreLoginEvent event = EventFactory.onPlayerPreLogin(name, session.getAddress(), uuid);
+                if (event.getLoginResult() != AsyncPlayerPreLoginEvent.Result.ALLOWED) {
+                    session.disconnect(event.getKickMessage());
+                    return;
                 }
 
                 // Spawn in player

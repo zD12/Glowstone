@@ -19,6 +19,8 @@ public class HandshakeHandler implements MessageHandler<GlowSession, HandshakeMe
             return;
         }
 
+        session.setHostname(message.getAddress() + ":" + message.getPort());
+
         // BungeeCord modifies the hostname in the HandshakeMessage to contain
         // the client's UUID and (optionally) properties
         boolean bungee = session.getServer().getProxyParsing();
