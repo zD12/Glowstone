@@ -857,7 +857,7 @@ public final class GlowPlayer extends GlowHumanEntity implements Player {
 
     @Override
     public void setSneaking(boolean sneak) {
-        if (EventFactory.onPlayerToggleSneak(this, sneak).isCancelled()) {
+        if (EventFactory.callEvent(new PlayerToggleSneakEvent(this, sneak)).isCancelled()) {
             return;
         }
 
@@ -1109,8 +1109,10 @@ public final class GlowPlayer extends GlowHumanEntity implements Player {
     @Override
     public boolean teleport(Location location, TeleportCause cause) {
         if (this.location != null && this.location.getWorld() != null) {
-            PlayerTeleportEvent event = EventFactory.onPlayerTeleport(this, getLocation(), location, cause);
-            if (event.isCancelled()) return false;
+            PlayerTeleportEvent event = new PlayerTeleportEvent(this, this.location, location, cause);
+            if (EventFactory.callEvent(event).isCancelled()) {
+                return false;
+            }
             location = event.getTo();
         }
 
@@ -1159,26 +1161,46 @@ public final class GlowPlayer extends GlowHumanEntity implements Player {
 
     @Override
     public void chat(String text) {
+        chat(text, false);
+    }
+
+    /**
+     * Says a message (or runs a command).
+     * @param text message sent by the player.
+     * @param async whether the message was received asynchronously.
+     */
+    public void chat(final String text, boolean async) {
         if (text.startsWith("/")) {
-            server.getLogger().info(getName() + " issued command: " + text);
-            try {
-                PlayerCommandPreprocessEvent event = EventFactory.onPlayerCommand(this, text);
-                if (event.isCancelled()) {
-                    return;
+            Runnable task = new Runnable() {
+                @Override
+                public void run() {
+                    server.getLogger().info(getName() + " issued command: " + text);
+                    try {
+                        PlayerCommandPreprocessEvent event = new PlayerCommandPreprocessEvent(GlowPlayer.this, text);
+                        if (!EventFactory.callEvent(event).isCancelled()) {
+                            server.dispatchCommand(GlowPlayer.this, event.getMessage().substring(1));
+                        }
+                    } catch (Exception ex) {
+                        sendMessage(ChatColor.RED + "An internal error occurred while executing your command.");
+                        server.getLogger().log(Level.SEVERE, "Exception while executing command: " + text, ex);
+                    }
                 }
-                getServer().dispatchCommand(event.getPlayer(), event.getMessage().substring(1));
-            } catch (Exception ex) {
-                sendMessage(ChatColor.RED + "An internal error occured while executing your command.");
-                getServer().getLogger().log(Level.SEVERE, "Exception while executing command: " + text, ex);
+            };
+
+            // if async is true, this task should happen synchronously
+            // otherwise, we're sync already, it can happen here
+            if (async) {
+                server.getScheduler().runTask(null, task);
+            } else {
+                task.run();
             }
         } else {
-            // todo: async this
-            PlayerChatEvent event = EventFactory.onPlayerChat(this, text);
+            AsyncPlayerChatEvent event = EventFactory.onPlayerChat(async, this, text);
             if (event.isCancelled()) {
                 return;
             }
 
-            String message = String.format(event.getFormat(), event.getPlayer().getDisplayName(), event.getMessage());
+            String message = String.format(event.getFormat(), getDisplayName(), event.getMessage());
             getServer().getLogger().info(message);
             for (Player recipient : event.getRecipients()) {
                 recipient.sendMessage(message);
