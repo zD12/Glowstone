@@ -309,11 +309,12 @@ public final class ServerConfig {
         GENERATOR_SETTINGS("world.gen-settings", "", Migrate.PROPS, "generator-settings"),
         ALLOW_NETHER("world.allow-nether", true, Migrate.PROPS, "allow-nether"),
         ALLOW_END("world.allow-end", true, Migrate.BUKKIT, "settings.allow-end"),
+        PERSIST_SPAWN("world.keep-spawn-loaded", true),
 
         // game props
         GAMEMODE("game.gamemode", "SURVIVAL", Migrate.PROPS, "gamemode"),
         FORCE_GAMEMODE("game.gamemode-force", "false", Migrate.PROPS, "force-gamemode"),
-        DIFFICULTY("game.difficulty", "EASY", Migrate.PROPS, "difficulty"),
+        DIFFICULTY("game.difficulty", "NORMAL", Migrate.PROPS, "difficulty"),
         HARDCORE("game.hardcore", false, Migrate.PROPS, "hardcore"),
         PVP_ENABLED("game.pvp", true, Migrate.PROPS, "pvp"),
         MAX_BUILD_HEIGHT("game.max-build-height", 256, Migrate.PROPS, "max-build-height"),
