@@ -262,8 +262,9 @@ public final class GlowWorld implements World {
 
         // begin loading spawn area
         spawnChunkLock = newChunkLock("spawn");
-        EventFactory.callEvent(new WorldInitEvent(this));
+        server.addWorld(this);
         server.getLogger().info("Preparing spawn for " + name + "...");
+        EventFactory.callEvent(new WorldInitEvent(this));
 
         // determine the spawn location if we need to
         if (spawnLocation == null) {
@@ -1308,9 +1309,9 @@ public final class GlowWorld implements World {
 
     @Override
     public void playEffect(Location location, Effect effect, int data, int radius) {
-        radius *= radius;
+        final int radiusSquared = radius * radius;
         for (Player player : getRawPlayers()) {
-            if (player.getLocation().distanceSquared(location) <= radius) {
+            if (player.getLocation().distanceSquared(location) <= radiusSquared) {
                 player.playEffect(location, effect, data);
             }
         }
@@ -1328,9 +1329,9 @@ public final class GlowWorld implements World {
     }
 
     public void playEffectExceptTo(Location location, Effect effect, int data, int radius, Player exclude) {
-        radius *= radius;
+        final int radiusSquared = radius * radius;
         for (Player player : getRawPlayers()) {
-            if (!player.equals(exclude) && player.getLocation().distanceSquared(location) <= radius) {
+            if (!player.equals(exclude) && player.getLocation().distanceSquared(location) <= radiusSquared) {
                 player.playEffect(location, effect, data);
             }
         }
